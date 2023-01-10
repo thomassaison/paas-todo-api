@@ -4,7 +4,7 @@ const { Sequelize } = require("sequelize")
 const app = express()
 app.use(express.json())
 
-const sequelize = new Sequelize(process.env.DATABASE_URL)
+const sequelize = new Sequelize(process.env.SCALINGO_POSTGRESQL_URL)
 
 app.get("/", function (req, res) {
   res.send(`Hello World!`)
