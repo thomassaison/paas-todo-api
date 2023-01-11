@@ -5,6 +5,7 @@
   "scripts": {
     "start": "node app.js",
     "start:worker": "node worker.js",
+    "start:admin": "node admin.js",
     "start:watch": "nodemon app.js",
     "migrate": "sequelize db:migrate",
     "migrate:undo": "sequelize db:migrate:undo"
