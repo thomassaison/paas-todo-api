@@ -14,7 +14,7 @@ workQueue.process(async (job) => {
     )
     try {
         await sequelize.query("UPDATE todos SET statut = ? WHERE date_echeance < now()", {
-            replacements: ["EN_RETARD", job.data.idTodo]
+            replacements: ["EN_RETARD"]
         })
     } catch (error) {
         console.error(error)
