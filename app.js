@@ -1,10 +1,15 @@
 require("dotenv").config()
 const express = require("express")
 const { Sequelize } = require("sequelize")
+import { createClient } from 'redis';
 const app = express()
 app.use(express.json())
 
-const sequelize = new Sequelize(process.env.SCALINGO_POSTGRESQL_URL)
+const client = createClient({
+  url: process.env.REDIS_URL,
+});
+
+const sequelize = new Sequelize(process.env.DATABASE_URL)
 
 app.get("/", function (req, res) {
   res.send(`Hello World!`)
@@ -38,7 +43,13 @@ app.post("/todos", async function (req, res) {
   res.send("Ok")
 })
 
-const port = process.env.PORT
-app.listen(port, function () {
-  console.log(`ToDo API listening on port ${port}`)
-})
+
+
+(async () => {
+  const port = process.env.PORT
+  await client.connect();
+
+  app.listen(port, function () {
+    console.log(`ToDo API listening on port ${port}`)
+  })
+})()
