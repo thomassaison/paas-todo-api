@@ -1,2 +1,2 @@
 postdeploy: npm run migrate
-worker: node worker.js
+worker: node start:worker
