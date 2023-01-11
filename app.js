@@ -1,15 +1,16 @@
 require("dotenv").config()
 const express = require("express")
 const { Sequelize } = require("sequelize")
-import { createClient } from 'redis';
 const app = express()
 app.use(express.json())
 
-const client = createClient({
-  url: process.env.REDIS_URL,
-});
-
 const sequelize = new Sequelize(process.env.DATABASE_URL)
+
+const Queue = require("bull")
+const REDIS_URL = process.env.REDIS_URL
+
+// Création d'une file de JOBs (stockée sur Redis) gérée par Bull
+let workQueue = new Queue("queueEcheanceTodos", REDIS_URL)
 
 app.get("/", function (req, res) {
   res.send(`Hello World!`)
@@ -29,11 +30,16 @@ app.post("/todos", async function (req, res) {
   console.log(`Données entrées : ${JSON.stringify(req.body)}`)
 
   try {
-    await sequelize.query(
-      `INSERT INTO todos(description, date_echeance) VALUES(?, ?) RETURNING id`,
-      {
-        replacements: [req.body.description, req.body.date_echeance]
-      }
+    const todos = await sequelize.query(
+        `INSERT INTO todos(description, date_echeance) VALUES(?, ?) RETURNING id`,
+        {
+          replacements: [req.body.description, req.body.date_echeance]
+        }
+    )
+    // Planification d'un JOB dans la queue qui s'exécute lorsque la date d'échéance du ToDo arrive
+    await workQueue.add(
+        { idTodo: todos[0][0].id, dateEcheance: req.body.date_echeance },
+        { delay: new Date(req.body.date_echeance).getTime() - Date.now() }
     )
   } catch (error) {
     console.error(error)
@@ -43,13 +49,7 @@ app.post("/todos", async function (req, res) {
   res.send("Ok")
 })
 
-
-
-(async () => {
-  const port = process.env.PORT
-  await client.connect();
-
-  app.listen(port, function () {
-    console.log(`ToDo API listening on port ${port}`)
-  })
-})()
+const port = process.env.PORT
+app.listen(port, function () {
+  console.log(`ToDo API listening on port ${port}`)
+})
